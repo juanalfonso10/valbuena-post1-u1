@@ -35,3 +35,58 @@ El patrón **Factory Method** es un patrón de diseño creacional que proporcion
   |------------------|       +----------------+           +-------------------+
   | +factoryMethod() |
   +------------------+
+---
+
+## 3. Patrones de Comportamiento en Spring
+
+### Patrón Seleccionado: `Strategy` (Estrategia)
+
+#### 3.1. Propósito y Contexto en Spring
+El patrón **Strategy** permite definir una familia de algoritmos, encapsular cada uno en una clase independiente y hacer que sus objetos sean intercambiables en tiempo de ejecución. En Spring Framework, este patrón es fundamental para desacoplar reglas de negocio variables y permitir la inyección dinámica de comportamientos mediante el contenedor IoC.
+
+#### 3.2. Implementación en Spring Framework
+Spring facilita la implementación de este patrón de forma natural gracias a su capacidad de inyectar colecciones o mapas de beans. Cuando múltiples clases implementan una misma interfaz, Spring puede inyectarlas todas en una lista o mapa, permitiendo que el servicio principal seleccione la estrategia adecuada según el contexto (por ejemplo, diferentes algoritmos de cálculo de impuestos o pasarelas de pago).
+
+#### 3.3. Ejemplo de Código y Análisis
+```java
+// Interfaz de la estrategia
+public interface DiscountStrategy {
+    double calculateDiscount(double amount);
+}
+
+// Estrategia concreta 1: Cliente regular
+@Component("regular")
+public class RegularDiscountStrategy implements DiscountStrategy {
+    @Override
+    public double calculateDiscount(double amount) {
+        return amount * 0.05; // 5% de descuento
+    }
+}
+
+// Estrategia concreta 2: Cliente VIP
+@Component("vip")
+public class VipDiscountStrategy implements DiscountStrategy {
+    @Override
+    public double calculateDiscount(double amount) {
+        return amount * 0.20; // 20% de descuento
+    }
+}
+
+// Contexto que utiliza la estrategia inyectada por Spring
+@Service
+public class OrderService {
+    private final Map<String, DiscountStrategy> strategies;
+
+    // Spring inyecta automáticamente todas las implementaciones en un mapa usando el nombre del bean
+    public OrderService(Map<String, DiscountStrategy> strategies) {
+        this.strategies = strategies;
+    }
+
+    public double applyDiscount(String clientType, double amount) {
+        DiscountStrategy strategy = strategies.get(clientType);
+        if (strategy == null) {
+            throw new IllegalArgumentException("Estrategia no válida");
+        }
+        return strategy.calculateDiscount(amount);
+    }
+}
