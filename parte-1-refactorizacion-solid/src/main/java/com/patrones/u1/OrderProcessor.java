@@ -1,11 +1,27 @@
 package com.patrones.u1;
 
+import com.patrones.u1.repository.IOrderRepository;
+import com.patrones.u1.service.IPaymentService;
+import com.patrones.u1.service.INotificationService;
+
 import java.util.List;
 
 public class OrderProcessor {
+    private final IPaymentService paymentService;
+    private final IOrderRepository orderRepository;
+    private final INotificationService notificationService;
+
+    // Inyección de dependencias por constructor (DIP)
+    public OrderProcessor(IPaymentService paymentService, 
+                          IOrderRepository orderRepository, 
+                          INotificationService notificationService) {
+        this.paymentService = paymentService;
+        this.orderRepository = orderRepository;
+        this.notificationService = notificationService;
+    }
 
     public void processOrder(String orderId, List<String> items, double totalAmount, String customerEmail) {
-        // 1. Validación de reglas de negocio
+        // 1. Validaciones de negocio
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El pedido no tiene ítems.");
         }
@@ -13,19 +29,13 @@ public class OrderProcessor {
             throw new IllegalArgumentException("El monto total debe ser mayor a cero.");
         }
 
-        // 2. Procesamiento de pago (Lógica acoplada)
-        System.out.println("Procesando pago de $" + totalAmount + " para el pedido " + orderId);
-        boolean paymentSuccess = true; // Simulación de pasarela de pago
-        if (!paymentSuccess) {
-            throw new RuntimeException("El pago falló.");
-        }
+        // 2. Delegación de pagos
+        paymentService.processPayment(orderId, totalAmount);
 
-        // 3. Persistencia en Base de Datos (SQL directo acoplado)
-        System.out.println("Guardando pedido " + orderId + " en la base de datos...");
-        // INSERT INTO orders VALUES (...)
+        // 3. Delegación de persistencia
+        orderRepository.save(orderId, items, totalAmount);
 
-        // 4. Envío de Notificaciones por Email (Acoplado)
-        System.out.println("Enviando correo de confirmación a: " + customerEmail);
-        // Lógica de conexión SMTP y envío de correo
+        // 4. Delegación de notificaciones
+        notificationService.sendNotification(customerEmail, "Tu pedido " + orderId + " ha sido procesado con éxito.");
     }
 }
